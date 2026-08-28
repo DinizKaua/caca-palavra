@@ -1,0 +1,50 @@
+# ========================
+# Compilados do Java
+# ========================
+*.class
+*.log
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Arquivos de log de erro da Máquina Virtual Java
+hs_err_pid*
+
+# ========================
+# Build do Maven
+# ========================
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+
+# ========================
+# VS Code (Java)
+# ========================
+.vscode/
+.project
+.classpath
+.factorypath
+.settings/
+bin/
+
+# ========================
+# Sistema Operacional
+# ========================
+# Windows
+Thumbs.db
+ehthumbs.db
+$RECYCLE.BIN/
+
+# Mac
+.DS_Store
+.AppleDouble
+.LSOverride
