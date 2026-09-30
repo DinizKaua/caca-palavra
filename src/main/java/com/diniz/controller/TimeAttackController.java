@@ -1,8 +1,11 @@
 package com.diniz.controller;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 
 import javax.swing.Timer;
 
@@ -13,17 +16,25 @@ import com.diniz.model.GameResult;
 import com.diniz.model.GameStatus;
 import com.diniz.model.GeradorMatriz;
 import com.diniz.model.Palavra;
+import com.diniz.repository.WordRepository;
+import com.diniz.service.WordSelectionService;
 import com.diniz.view.GameView;
 
 /** Controller do único modo disponível. Outros modos podem ganhar controllers próprios. */
 public class TimeAttackController {
     private final GameView view;
+    private final WordSelectionService wordSelectionService;
     private Timer timer;
     private Game game;
     private Difficulty selectedDifficulty;
 
     public TimeAttackController(GameView view) {
+        this(view, new WordSelectionService(new WordRepository()));
+    }
+
+    TimeAttackController(GameView view, WordSelectionService wordSelectionService) {
         this.view = view;
+        this.wordSelectionService = wordSelectionService;
     }
 
     public void showMainMenu() {
@@ -37,7 +48,13 @@ public class TimeAttackController {
 
     private void showWordEntry(Difficulty difficulty) {
         selectedDifficulty = difficulty;
-        view.showWordEntry(difficulty, this::startGame, this::showDifficultySelection);
+        view.showWordEntry(difficulty, this::startGame, this::randomizeWord, this::showDifficultySelection);
+    }
+
+    private void randomizeWord(int position, List<String> entries) {
+        wordSelectionService.selectRandomWord(selectedDifficulty, entries)
+                .ifPresentOrElse(word -> view.updateWordEntry(position, word),
+                        () -> view.showError("Não há outra palavra compatível disponível."));
     }
 
     private void startGame(List<String> entries) {
@@ -45,6 +62,7 @@ public class TimeAttackController {
             view.showError("Informe exatamente " + selectedDifficulty.getWordCount() + " palavras.");
             return;
         }
+        Set<String> uniqueWords = new HashSet<>();
         for (String entry : entries) {
             if (entry == null || entry.trim().isEmpty()) {
                 view.showError("Todas as palavras devem ser preenchidas.");
@@ -52,6 +70,10 @@ public class TimeAttackController {
             }
             if (entry.trim().length() > selectedDifficulty.getBoardSize()) {
                 view.showError("Cada palavra deve ter no máximo " + selectedDifficulty.getBoardSize() + " letras.");
+                return;
+            }
+            if (!uniqueWords.add(canonical(entry))) {
+                view.showError("Não repita palavras na mesma partida.");
                 return;
             }
         }
@@ -79,6 +101,10 @@ public class TimeAttackController {
         List<Palavra> words = new ArrayList<>();
         for (String entry : entries) words.add(new Palavra(entry.trim()));
         return words;
+    }
+
+    private String canonical(String word) {
+        return word.trim().toUpperCase(Locale.ROOT);
     }
 
     private void startTimer() {

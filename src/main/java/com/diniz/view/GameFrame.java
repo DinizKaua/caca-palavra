@@ -41,6 +41,7 @@ public class GameFrame extends JFrame implements GameView {
     private Coordenada selectionStart;
     private BiConsumer<Coordenada, Coordenada> selectionListener;
     private Game displayedGame;
+    private JTextField[] wordEntryFields;
 
     public GameFrame() {
         super("Caça-Palavras");
@@ -78,31 +79,42 @@ public class GameFrame extends JFrame implements GameView {
     }
 
     @Override
-    public void showWordEntry(Difficulty difficulty, Consumer<List<String>> onStart, Runnable onBack) {
+    public void showWordEntry(Difficulty difficulty, Consumer<List<String>> onStart,
+            BiConsumer<Integer, List<String>> onRandomize, Runnable onBack) {
         JPanel panel = verticalPanel();
-        panel.add(title(difficulty.getDisplayName().toUpperCase(), 26));
+        panel.add(title("ESCOLHA AS PALAVRAS", 26));
         panel.add(Box.createVerticalStrut(8));
-        panel.add(title("Digite as " + difficulty.getWordCount() + " palavras", 17));
+        panel.add(title(difficulty.getDisplayName() + " — digite ou sorteie " + difficulty.getWordCount() + " palavras", 17));
         panel.add(Box.createVerticalStrut(18));
 
-        JPanel fields = new JPanel(new GridLayout(difficulty.getWordCount(), 2, 8, 8));
+        JPanel fields = new JPanel(new GridLayout(difficulty.getWordCount(), 3, 8, 8));
         fields.setOpaque(false);
-        JTextField[] entries = new JTextField[difficulty.getWordCount()];
-        for (int i = 0; i < entries.length; i++) {
+        wordEntryFields = new JTextField[difficulty.getWordCount()];
+        for (int i = 0; i < wordEntryFields.length; i++) {
             fields.add(new JLabel((i + 1) + ".", SwingConstants.RIGHT));
-            entries[i] = new JTextField(18);
-            fields.add(entries[i]);
+            wordEntryFields[i] = new JTextField(20);
+            fields.add(wordEntryFields[i]);
+            final int position = i;
+            JButton randomButton = new JButton("🎲");
+            randomButton.setToolTipText("Sortear palavra");
+            randomButton.addActionListener(event -> onRandomize.accept(position, currentWordEntries()));
+            fields.add(randomButton);
         }
         panel.add(fields);
         panel.add(Box.createVerticalStrut(20));
         panel.add(actionButton("COMEÇAR", event -> {
-            List<String> words = new java.util.ArrayList<>();
-            for (JTextField entry : entries) words.add(entry.getText());
-            onStart.accept(words);
+            onStart.accept(currentWordEntries());
         }));
         panel.add(Box.createVerticalStrut(10));
         panel.add(actionButton("VOLTAR", event -> onBack.run()));
         showPanel(panel);
+    }
+
+    @Override
+    public void updateWordEntry(int position, String word) {
+        if (wordEntryFields != null && position >= 0 && position < wordEntryFields.length) {
+            wordEntryFields[position].setText(word);
+        }
     }
 
     @Override
@@ -232,6 +244,14 @@ public class GameFrame extends JFrame implements GameView {
     private void showPanel(JPanel panel) {
         setContentPane(panel);
         finishPanelChange();
+    }
+
+    private List<String> currentWordEntries() {
+        List<String> words = new java.util.ArrayList<>();
+        if (wordEntryFields != null) {
+            for (JTextField entry : wordEntryFields) words.add(entry.getText());
+        }
+        return words;
     }
 
     private void finishPanelChange() {
